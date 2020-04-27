@@ -251,7 +251,38 @@ struct TreeHelper<BNode,B_NODE_FLAGXX>{
   }
 
   static void  print (node_t** head){
-    std::cout << "PRINT" << std::endl;
+    std::stack <node_t*> s_node; 
+    std::stack <int> s_index; 
+    auto current = *head;
+    int current_index = 0;
+    while(current != nullptr) {
+      s_node.push(current);
+      s_index.push(current_index);
+      std::cout << current->data[current_index] << std::endl;
+      
+      if (current->children[current_index]!=nullptr) {
+        current = current->children[current_index];
+      } else {
+        if (current->children[current_index+1]!=nullptr) {
+          current = current->children[current_index+1];
+        } else {
+          if (current->current_size > current_index + 1){
+            current_index++; s_node.pop(); s_index.pop();
+          }
+          else {
+            if (!s_node.empty()){
+              s_node.pop(); s_index.pop();
+              current = s_node.top(); s_node.pop();
+              current_index = s_index.top(); s_index.pop();
+            }
+            else {
+              current = nullptr;
+            }
+          }
+        }
+      }  
+    
+    }
   }
 };
 
