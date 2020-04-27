@@ -44,6 +44,28 @@ public:
   class binary_search{
   public:
     bool operator() (container_t a, const value_t v){
+      /*
+
+
+      */
+      int bottom, top;
+      int pivot;
+      bool notFound = true;
+      while (notFound) {
+        if (a[pivot] == v) {
+          notFound = false;
+          pivot = 
+        } else {
+          if (bottom == pivot )
+          if (a[pivot] < v) {
+            top = pivot;
+            pivot = (pivot + bottom)/2;
+          } else {
+            bottom = pivot;
+            pivot = (pivot + top) /2;
+          }
+        }
+      }
       return std::binary_search(a.begin(), a.end(), v)
     }
   };
