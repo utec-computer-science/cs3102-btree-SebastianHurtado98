@@ -1,6 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <stack>
+#include <algorithm>  
+#include <math.h>  
 #define BST_NODE_FLAGXX 1
 #define B_NODE_FLAGXX 2
 
@@ -68,9 +70,50 @@ class BNode : public BNodeTraits{
 
   container_t data;
   BNode** children;
+  bool full, isLeaf;
+  BNode** parent;
+  int max_size, current_size;
 
-  BNode(value_t data){
+  BNode(value_t val){
     children = new BNode*[4];
+    children[0] = nullptr;
+    children[1] = nullptr;
+    children[2] = nullptr;
+    children[3] = nullptr;
+    max_size = 3;
+    current_size = 0;
+    isLeaf = false;
+    full = false;
+    data.push_back(val);
+  }
+  int insert(const value_t &val) {
+    int index = 0;
+    this->data.push_back(val);
+    sort(this->data.begin(), this->data.end());
+    this->current_size++;
+    if (this->current_size < this->max_size) {
+        this->full = true;
+    } 
+    for (auto x : this->data) {
+      if (val<x) {
+        index++;
+      }
+    }
+    return index;
+  }
+  value_t get_pivot() {
+    return this->data[1];
+  }
+  BNode* get_left() {
+    auto ptr = new BNode(this->data[0]);
+    ptr->children[0] = this->children[0];
+    return new BNode(this->data[0]);
+  }
+  BNode* get_right() {
+    auto ptr = new BNode(this->data[2]);
+    ptr->data[1] = this->data[3]; 
+    ptr->children[2] = this->children[2];
+    ptr->children[3] = this->children[3];
   }
   ~BNode(void){}
 
@@ -113,7 +156,6 @@ struct TreeHelper<BSTNode,BST_NODE_FLAGXX>{
   static void  insert (node_t** head, const value_t& val){
     auto current = head;
     auto next = head;
-    
     
     if ((*head) == nullptr) {
       *head = new node_t(val);
@@ -159,12 +201,57 @@ template<>
 struct TreeHelper<BNode,B_NODE_FLAGXX>{
   typedef BNode  node_t;
   typedef typename node_t::value_t value_t;
+  typedef typename node_t::container_t container_t;
   
+  static int find (const container_t& container, const value_t& val) {
+    int index = 0;
+    for (auto x: container) {
+      if (x < val) index++; 
+    }
+    return index;
+  }
   static void  insert (node_t** head, const value_t& val){
-    std::cout << "Insertando para un nodo B" << std::endl;
+    auto current = head;
+    auto next = head;
+    auto current_index = 0;
+    if ((*head) == nullptr) {
+      *head = new node_t(val);
+    }
+    else {
+      while((*next) != nullptr) {
+        current = next;
+        current_index = find((*current)->data, val);
+        next = &((*current)->children[current_index]);
+      }
+      
+      if (!(*current)->full) {
+        (*current)->insert(val);
+      } else {
+        (*current)->insert(val);
+        auto pivot = (*current)->get_pivot();
+        auto parent = (*current)->parent;
+        node_t *left_node = ((*current)->get_left());
+        node_t *right_node = ((*current)->get_right());
+        if ((*parent)==nullptr) {
+          (*parent) = new node_t(pivot);
+          (*parent)->children[0] = left_node;
+          (*parent)->children[1] = right_node;
+          left_node->parent = parent;
+          right_node->parent = parent;
+          (*parent)->isLeaf = false;
+          (*parent)->parent = nullptr;
+        } else {
+          auto index = (*parent)->insert(val);
+          (*parent)->children[index] = left_node;
+          (*parent)->children[index+1] = right_node;
+        }
+      } 
+    
+  }
   }
 
   static void  print (node_t** head){
+    std::cout << "PRINT" << std::endl;
   }
 };
 
