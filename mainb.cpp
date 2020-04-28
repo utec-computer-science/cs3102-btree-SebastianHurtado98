@@ -74,28 +74,29 @@ class BNode : public BNodeTraits{
   BNode** parent;
   int max_size, current_size;
 
-  BNode(value_t val){
+  BNode(){
     children = new BNode*[4];
     children[0] = nullptr;
     children[1] = nullptr;
     children[2] = nullptr;
     children[3] = nullptr;
+    parent = nullptr;
     max_size = 3;
     current_size = 0;
     isLeaf = false;
     full = false;
-    data.push_back(val);
   }
   int insert(const value_t &val) {
     int index = 0;
     this->data.push_back(val);
     sort(this->data.begin(), this->data.end());
     this->current_size++;
-    if (this->current_size < this->max_size) {
+    if (this->current_size >= this->max_size) {
         this->full = true;
+        std::cout << "FULL";
     } 
     for (auto x : this->data) {
-      if (val<x) {
+      if (val>x) {
         index++;
       }
     }
@@ -104,16 +105,17 @@ class BNode : public BNodeTraits{
   value_t get_pivot() {
     return this->data[1];
   }
-  BNode* get_left() {
-    auto ptr = new BNode(this->data[0]);
-    ptr->children[0] = this->children[0];
-    return new BNode(this->data[0]);
+  void get_left(BNode* &newNode) {
+    newNode->insert(this->data[0]);
+    if (this->children[0] != nullptr) newNode->children[0] = this->children[0];
+    if (this->children[1] != nullptr) newNode->children[1] = this->children[1];
+
   }
-  BNode* get_right() {
-    auto ptr = new BNode(this->data[2]);
-    ptr->data[1] = this->data[3]; 
-    ptr->children[2] = this->children[2];
-    ptr->children[3] = this->children[3];
+  void get_right(BNode* &newNode) {
+    newNode->insert(this->data[2]);
+    newNode->insert(this->data[3]); 
+    if (this->children[2] != nullptr) newNode->children[0] = this->children[2];
+    if (this->children[3] != nullptr) newNode->children[1] = this->children[3];
   }
   ~BNode(void){}
 
@@ -215,7 +217,8 @@ struct TreeHelper<BNode,B_NODE_FLAGXX>{
     auto next = head;
     auto current_index = 0;
     if ((*head) == nullptr) {
-      *head = new node_t(val);
+      *head = new node_t;
+      (*head)->insert(val);
     }
     else {
       while((*next) != nullptr) {
@@ -229,59 +232,52 @@ struct TreeHelper<BNode,B_NODE_FLAGXX>{
       } else {
         (*current)->insert(val);
         auto pivot = (*current)->get_pivot();
-        auto parent = (*current)->parent;
-        node_t *left_node = ((*current)->get_left());
-        node_t *right_node = ((*current)->get_right());
-        if ((*parent)==nullptr) {
-          (*parent) = new node_t(pivot);
-          (*parent)->children[0] = left_node;
-          (*parent)->children[1] = right_node;
-          left_node->parent = parent;
-          right_node->parent = parent;
-          (*parent)->isLeaf = false;
-          (*parent)->parent = nullptr;
+        std::cout << pivot << std::endl;
+
+        node_t *left_node = new node_t;
+        node_t *right_node = new node_t;
+
+        (*current)->get_left(left_node);
+        (*current)->get_right(right_node);
+        
+      
+        if ((*current)->parent==nullptr) {
+          std::cout << "vacio " << std::endl;
+          node_t *new_parent = new node_t;
+          new_parent->insert(pivot);
+          new_parent->children[0] = left_node;
+          new_parent->children[1] = right_node;
+          new_parent->isLeaf = false;
+          *head = &*new_parent;
+          left_node->parent = head;
+          right_node->parent = head;
         } else {
-          auto index = (*parent)->insert(val);
-          (*parent)->children[index] = left_node;
-          (*parent)->children[index+1] = right_node;
+          auto parent = (*current)->parent;
+          auto index = (*parent)->insert(pivot);
+          (*parent)->children[index++] = &*left_node;
+          (*parent)->children[index] = &*right_node;
+          
         }
+        
       } 
     
   }
   }
 
   static void  print (node_t** head){
-    std::stack <node_t*> s_node; 
-    std::stack <int> s_index; 
-    auto current = *head;
-    int current_index = 0;
-    while(current != nullptr) {
-      s_node.push(current);
-      s_index.push(current_index);
-      std::cout << current->data[current_index] << std::endl;
-      
-      if (current->children[current_index]!=nullptr) {
-        current = current->children[current_index];
-      } else {
-        if (current->children[current_index+1]!=nullptr) {
-          current = current->children[current_index+1];
-        } else {
-          if (current->current_size > current_index + 1){
-            current_index++; s_node.pop(); s_index.pop();
-          }
-          else {
-            if (!s_node.empty()){
-              s_node.pop(); s_index.pop();
-              current = s_node.top(); s_node.pop();
-              current_index = s_index.top(); s_index.pop();
-            }
-            else {
-              current = nullptr;
-            }
-          }
-        }
-      }  
-    
+    auto current_node = *head;
+    auto current_container = current_node->data;
+    auto current_children = current_node->children;
+    std::cout << "Container: " << std::endl;
+    std::cout << "(";
+    for (auto x: current_container) {
+      std::cout << x << ", ";
+    }
+    std::cout << ")" << std::endl;
+    for (int i =0; i < 4; i++) {
+      if (current_children[i] != nullptr) {
+        print(&((*head)->children[i]));
+      }
     }
   }
 };
@@ -342,4 +338,13 @@ int main() {
   bsttree.insert(10);
   bsttree.insert(15);
   bsttree.print();
+  btree.insert(20);
+  btree.insert(30);
+  btree.insert(40);
+  btree.insert(10);
+  btree.insert(90);
+  btree.insert(5);
+  btree.insert(15);
+  btree.insert(150);
+  btree.print();
 }
